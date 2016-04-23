@@ -9846,7 +9846,7 @@ return jQuery;
 var $ = require('jquery');
 
 (function () {
-    var test = [1, 2, 3, 4, 5, 6, 8];
+    var test = [1, 2, 3, 4, 5, 6, 8, 9];
 
     var sum = test.reduce((a, b) => a + b);
 
