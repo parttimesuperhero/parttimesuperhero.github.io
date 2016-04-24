@@ -9,10 +9,12 @@ var gulp = require('gulp'),
     browserify = require('browserify'),
     watchify = require('watchify'),
     babel = require('babelify'),
-    htmlmin = require('gulp-htmlmin');;
+    htmlmin = require('gulp-htmlmin'),
+    cp = require('child_process'),
+    del = require('del');
 
 gulp.task('scripts', function() {
-    browserify('source/js/global.js')
+    browserify('./js/global.js')
         .transform(babel)
         .bundle()
         .on('error', function(err) { console.error(err); this.emit('end'); })
@@ -20,28 +22,39 @@ gulp.task('scripts', function() {
         .pipe(buffer())
         .pipe(sourcemaps.init({ loadMaps: true }))
         .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest('./js'));
+        .pipe(gulp.dest('./dist/js'));
 });
 
 gulp.task('styles', function() {
-    gulp.src('source/sass/**/*.scss')
+    gulp.src('sass/**/*.scss')
         .pipe(sass('sass', { style: 'expanded' }).on('error', sass.logError))
         .pipe(rename({suffix: '.min'}))
         .pipe(minifycss())
-        .pipe(gulp.dest('./css'));
+        .pipe(gulp.dest('./dist/css'));
 });
 
-gulp.task('html', function() {
-  return gulp.src(['source/html/*.html', 'source/html/**/*.html'])
-    .pipe(htmlmin({collapseWhitespace: true}))
-    .pipe(gulp.dest('./'))
+gulp.task('html', ['jekyll'], function() {
+    gulp.src(['tmp/*.html', 'tmp/**/*.html'])
+        .pipe(htmlmin({collapseWhitespace: true}))
+        .pipe(gulp.dest('./'));
+    del(['./tmp']);
+    return;
+});
+
+gulp.task('jekyll', function (gulpCallBack){
+    var spawn = cp.spawn;
+    var jekyll = spawn('jekyll', ['build'], {stdio: 'inherit'});
+
+    jekyll.on('exit', function(code) {
+        gulpCallBack(code === 0 ? null : 'ERROR: Jekyll process exited with code: '+code);
+    });
 });
 
 //Defaulr task
 gulp.task('watch', function() {
-    gulp.watch('source/sass/**/*.scss',['styles']);
-    gulp.watch('source/js/**/*.js',['scripts']);
-    gulp.watch('source/html/**/*.html',['html']);
+    gulp.watch('sass/**/*.scss',['styles']);
+    gulp.watch('js/**/*.js',['scripts']);
+    gulp.watch(['content/_layouts/*.html', 'content/*.html', 'content/**/*.html'],['html']);
 });
 
 //Default task
